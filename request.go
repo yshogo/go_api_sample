@@ -1,34 +1,32 @@
 package main
 
 import (
-  "fmt"
   "io/ioutil"
-  "log"
   "net/http"
   
-  "github.com/julienschmidt/httprouter"
+  "github.com/labstack/echo"
 )
 
 func main() {
-  router := httprouter.New()
-  router.GET("/", requestJSON)
+  e := echo.New()
+  e.GET("/", requestJSON)
 
-  log.Fatal(http.ListenAndServe(":8080", nil))
+  e.Logger.Fatal(e.Start(":8080"))
 }
 
 
-func requestJSON(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func requestJSON(c echo.Context) error {
   client := &http.Client{}
   req, err := http.NewRequest("GET", "https://firebasestorage.googleapis.com/v0/b/blog-80835.appspot.com/o/test.json?alt=media&token=401dc208-99f8-4a27-a30c-a288ebf38ca7", nil)
 
   if (err != nil) {
-    fmt.Println("error occur")
+    return c.String(http.StatusInternalServerError, "err")
   }
 
   resp, err := client.Do(req)
 
   if(err != nil) {
-    fmt.Println("error occur")
+    return c.String(http.StatusInternalServerError, "err")
   }
 
   defer resp.Body.Close()
@@ -36,8 +34,8 @@ func requestJSON(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
   body, err := ioutil.ReadAll(resp.Body)
 
   if(err != nil) {
-    fmt.Println("error occur")
+    return c.String(http.StatusInternalServerError, "err")
   }
 
-  fmt.Fprintf(w, string(body))
+  return c.String(http.StatusOK, string(body))
 }
